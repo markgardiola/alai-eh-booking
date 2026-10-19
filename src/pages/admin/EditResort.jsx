@@ -22,6 +22,7 @@ const EditResort = () => {
   const [resortData, setResortData] = useState({
     name: "",
     barangay: "",
+    address: "",
     location: "",
     description: "",
     ownerName: "",
@@ -61,7 +62,8 @@ const EditResort = () => {
         setResortData({
           name: data.name,
           barangay: data.barangay || "",
-          location: data.location,
+          address: data.address || "",
+          location: data.location || "",
           description: data.description,
           ownerName: data.owner_name || "",
           ownerEmail: data.owner_email || "",
@@ -292,6 +294,11 @@ const EditResort = () => {
       return;
     }
 
+    if (!resortData.address.trim()) {
+      toast.error("Address is required.");
+      return;
+    }
+
     if (!resortData.ownerName || !resortData.ownerEmail) {
       toast.error("Resort owner name and email are required.");
       return;
@@ -306,6 +313,7 @@ const EditResort = () => {
       const formData = new FormData();
       formData.append("name", resortData.name);
       formData.append("barangay", resortData.barangay);
+      formData.append("address", resortData.address);
       formData.append("location", resortData.location);
       formData.append("description", resortData.description);
       formData.append("ownerName", resortData.ownerName);
@@ -406,8 +414,24 @@ const EditResort = () => {
         </div>
 
         <div>
+          <label className="text-sm font-medium text-ink/80">Address</label>
+          <Input
+            type="text"
+            name="address"
+            value={resortData.address}
+            onChange={handleChange}
+            placeholder="e.g. Purok 3, San Vicente, Sto. Tomas City, Batangas"
+            required
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-ink/50">
+            Shown to guests on the resort card.
+          </p>
+        </div>
+
+        <div>
           <label className="text-sm font-medium text-ink/80">
-            Full Address / Google Maps Pin
+            Location coordinates for Google Maps ways
           </label>
           <Input
             type="text"
@@ -419,8 +443,9 @@ const EditResort = () => {
             className="mt-1.5"
           />
           <p className="mt-1 text-xs text-ink/50">
-            The exact address or a Google Maps link -- shown to guests for
-            directions.
+            Paste coordinates (right-click the spot in Google Maps and click the
+            coordinates numbers to copy) for an exact map. Short share links
+            can't be used for the map preview.
           </p>
         </div>
 

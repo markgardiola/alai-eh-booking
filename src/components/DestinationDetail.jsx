@@ -7,6 +7,7 @@ import Pagination from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import { goToBooking } from "@/lib/bookingGate";
 import { API_URL } from "../../config";
+import ResortLocation from "./ResortLocation";
 
 /**
  * Shared template for the "explore area" pages, one per barangay. Fed a
@@ -71,7 +72,7 @@ const DestinationDetail = ({ title, barangay, description }) => {
                     </h3>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-lagoon-dark">
                       <MapPin className="size-3.5" />
-                      {resort.location}
+                      <ResortLocation resort={resort} />
                     </p>
                     {resort.rating?.count > 0 && (
                       <p className="mt-1 flex items-center gap-1.5 text-sm text-ink/60">

@@ -16,6 +16,7 @@ import StarRating from "@/components/StarRating";
 import RoomPreviewDialog from "@/components/RoomPreviewDialog";
 import { goToBooking } from "@/lib/bookingGate";
 import { API_URL } from "../../config";
+import ResortLocation from "../components/ResortLocation";
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -119,8 +120,8 @@ const ViewDetails = () => {
               {resort.barangay && (
                 <span className="font-medium text-ink">{resort.barangay}</span>
               )}
-              {resort.barangay && resort.location && " · "}
-              {resort.location}
+              {resort.barangay && " · "}
+              <ResortLocation resort={resort} />
             </span>
             {resort.rating?.count > 0 && (
               <span className="flex items-center gap-1.5">

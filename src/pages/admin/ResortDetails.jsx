@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "../../../config";
+import ResortLocation from "../../components/ResortLocation";
 
 const formatTime12h = (time24) => {
   if (!time24) return "";
@@ -77,8 +78,8 @@ const ResortDetails = () => {
         {resort.barangay && (
           <span className="font-medium text-ink">{resort.barangay}</span>
         )}
-        {resort.barangay && resort.location && " · "}
-        {resort.location}
+        {resort.barangay && " · "}
+        <ResortLocation resort={resort} />
       </p>
       {resort.owner_name && (
         <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink/60">

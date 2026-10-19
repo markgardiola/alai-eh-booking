@@ -11,6 +11,7 @@ import { API_URL } from "../../../config";
 const AddResort = () => {
   const [name, setName] = useState("");
   const [barangay, setBarangay] = useState("");
+  const [address, setAddress] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -107,7 +108,7 @@ const AddResort = () => {
     if (
       !name ||
       !barangay ||
-      !location ||
+      !address ||
       !description ||
       !ownerName ||
       !ownerEmail ||
@@ -125,6 +126,7 @@ const AddResort = () => {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("barangay", barangay);
+      formData.append("address", address);
       formData.append("location", location);
       formData.append("description", description);
       formData.append("ownerName", ownerName);
@@ -225,21 +227,39 @@ const AddResort = () => {
         </div>
 
         <div>
+          <label htmlFor="address" className="text-sm font-medium text-ink/80">
+            Address
+          </label>
+          <Input
+            type="text"
+            id="address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="e.g. Purok 3, San Vicente, Sto. Tomas City, Batangas"
+            required
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-ink/50">
+            Shown to guests on the resort card.
+          </p>
+        </div>
+
+        <div>
           <label htmlFor="location" className="text-sm font-medium text-ink/80">
-            Full Address / Google Maps Pin
+            Map Pin (optional)
           </label>
           <Input
             type="text"
             id="location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Purok 3, San Vicente, Sto. Tomas City, Batangas"
-            required
+            placeholder="Location coordinates like 14.0822,121.1397"
             className="mt-1.5"
           />
           <p className="mt-1 text-xs text-ink/50">
-            The exact address or a Google Maps link -- shown to guests for
-            directions.
+            Paste coordinates (right-click the spot in Google Maps and click the
+            coordinates numbers to copy) for an exact map. Short share links
+            can't be used for the map preview.
           </p>
         </div>
 
