@@ -90,7 +90,7 @@ const ResortLocation = ({ resort }) => {
           />
 
           {!exact && (
-            <p className="text-xs text-ink/50">
+            <p className="text-xs mt-2 text-ink/50">
               Approximate location based on the address. Use Get Directions for
               navigation.
             </p>
