@@ -53,7 +53,17 @@ const ManageBooking = () => {
       })
       .catch((err) => {
         console.error("Error updating status:", err);
-        toast.error("Failed to update booking status");
+        if (err.response?.status === 409) {
+          Swal.fire({
+            icon: "warning",
+            title: "Can't approve this booking",
+            text: err.response.data.error,
+            confirmButtonColor: "#3e9c93",
+          });
+          fetchBookings();
+        } else {
+          toast.error("Failed to update booking status");
+        }
       });
   };
 
@@ -130,6 +140,15 @@ const ManageBooking = () => {
                             size="sm"
                             disabled={booking.status === "Confirmed"}
                             onClick={() => {
+                              if (!booking.payment_ready) {
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "Payment not completed",
+                                  text: "This booking has no successful payment or uploaded GCash receipt yet, so it can't be approved. The guest needs to pay via PayPal or upload a GCash receipt first.",
+                                  confirmButtonColor: "#3e9c93",
+                                });
+                                return;
+                              }
                               Swal.fire({
                                 title: "Approve this booking?",
                                 text: "This will mark the booking as Confirmed.",
