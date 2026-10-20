@@ -117,10 +117,17 @@ const Dashboard = () => {
 
   const kpiCards = [
     {
-      label: "Bookings (all time)",
-      value: kpis.totalBookingsAllTime,
-      icon: CalendarCheck,
-      to: "/adminDashboard/bookings",
+      label: "Registered Users",
+      value: kpis.totalUsers,
+      icon: Users,
+      to: "/adminDashboard/users",
+      accent: "bg-ink/10 text-ink",
+    },
+    {
+      label: "Resorts",
+      value: kpis.totalResorts,
+      icon: Hotel,
+      to: "/adminDashboard/resorts",
       accent: "bg-ink/10 text-ink",
     },
     {
@@ -129,6 +136,13 @@ const Dashboard = () => {
       icon: CalendarCheck,
       to: "/adminDashboard/bookings",
       accent: "bg-lagoon/10 text-lagoon-dark",
+    },
+    {
+      label: "Bookings (all time)",
+      value: kpis.totalBookingsAllTime,
+      icon: CalendarCheck,
+      to: "/adminDashboard/bookings",
+      accent: "bg-ink/10 text-ink",
     },
     {
       label: "Pending GCash Approval",
@@ -145,20 +159,6 @@ const Dashboard = () => {
       accent: "bg-seal/10 text-seal",
     },
     {
-      label: "Resorts",
-      value: kpis.totalResorts,
-      icon: Hotel,
-      to: "/adminDashboard/resorts",
-      accent: "bg-ink/10 text-ink",
-    },
-    {
-      label: "Registered Users",
-      value: kpis.totalUsers,
-      icon: Users,
-      to: "/adminDashboard/users",
-      accent: "bg-ink/10 text-ink",
-    },
-    {
       label: `Gross Revenue (${days}d)`,
       value: peso(kpis.grossRevenueInRange),
       icon: Wallet,
@@ -169,12 +169,6 @@ const Dashboard = () => {
       value: peso(kpis.alaiehRevenueInRange),
       icon: HandCoins,
       accent: "bg-lagoon/15 text-lagoon-dark",
-    },
-    {
-      label: `Owner Payouts (${days}d)`,
-      value: peso(kpis.ownerPayoutsInRange),
-      icon: Wallet,
-      accent: "bg-sand text-ink",
     },
   ];
 
