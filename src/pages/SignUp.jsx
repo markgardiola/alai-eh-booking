@@ -121,7 +121,7 @@ const SignUp = () => {
   return (
     <AuthShell
       eyebrow="Join us"
-      title="Your next beach escape starts here."
+      title="Your next staycation starts here."
       subtitle="Create an account to book resorts, track reservations, and get booking updates by email."
     >
       <StepIndicator steps={["Your details", "Verify phone"]} current={step} />

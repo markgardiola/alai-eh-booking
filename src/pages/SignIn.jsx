@@ -74,7 +74,7 @@ const SignIn = () => {
     <AuthShell
       eyebrow="Welcome back"
       title="Pick up right where you left off."
-      subtitle="Sign in to manage your bookings and discover more Batangas beach stays."
+      subtitle="Sign in to manage your bookings and discover more in Sto. Tomas City."
     >
       <h1 className="font-display text-3xl font-semibold text-ink">Sign In</h1>
       <form

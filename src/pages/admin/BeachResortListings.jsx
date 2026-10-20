@@ -50,7 +50,7 @@ const BeachResortListings = () => {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-semibold text-ink">
-          Beach Resort Listings
+          Private Resort Listings
         </h1>
         <Link to="add">
           <Button className="gap-1.5">

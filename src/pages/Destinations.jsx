@@ -8,6 +8,7 @@ import { API_URL } from "../../config";
 
 const Destinations = ({ searchTerm }) => {
   const [destinations, setDestinations] = useState([]);
+  const [resorts, setResorts] = useState([]);
   const [filteredDestinations, setFilteredDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,6 +20,13 @@ const Destinations = ({ searchTerm }) => {
       .then((res) => setDestinations(res.data))
       .catch((err) => console.error("Error fetching destinations:", err))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get(`${API_URL}/api/resorts`)
+      .then((res) => setResorts(res.data))
+      .catch((err) => console.error("Error fetching resorts:", err));
   }, []);
 
   useEffect(() => {
@@ -38,6 +46,11 @@ const Destinations = ({ searchTerm }) => {
   );
   const [featured, ...rest] = paginated;
 
+  const term = searchTerm?.trim().toLowerCase() || "";
+  const matchedResorts = term
+    ? resorts.filter((r) => r.name?.toLowerCase().includes(term))
+    : [];
+
   return (
     <section className="mx-auto max-w-6xl px-6 py-20">
       <div className="mb-12 text-center">
@@ -45,9 +58,7 @@ const Destinations = ({ searchTerm }) => {
           {searchTerm ? "Search results" : "Where to next"}
         </p>
         <h2 className="mt-3 font-display text-4xl font-semibold text-ink sm:text-5xl">
-          {searchTerm
-            ? `"${searchTerm}"`
-            : "Top beach destinations in Sto. Tomas"}
+          {searchTerm ? `"${searchTerm}"` : "Cities of Sto. Tomas"}
         </h2>
       </div>
 
@@ -55,6 +66,11 @@ const Destinations = ({ searchTerm }) => {
         <p className="text-center text-ink/60">Loading...</p>
       ) : paginated.length > 0 ? (
         <>
+          {searchTerm && matchedResorts.length > 0 && (
+            <h3 className="mb-4 font-display text-xl font-semibold text-ink">
+              Areas
+            </h3>
+          )}
           {/* Featured destination - wide editorial card */}
           <Link
             to={`/destinations/${featured.slug}`}
@@ -110,12 +126,48 @@ const Destinations = ({ searchTerm }) => {
             </div>
           )}
         </>
-      ) : (
+      ) : matchedResorts.length > 0 ? null : (
         <p className="text-center text-ink/60">
           {searchTerm
-            ? `No destinations found for "${searchTerm}".`
+            ? `No areas or resorts found for "${searchTerm}".`
             : "No destinations yet -- list a resort to create the first one."}
         </p>
+      )}
+
+      {matchedResorts.length > 0 && (
+        <div className={searchTerm && paginated.length > 0 ? "mt-12" : ""}>
+          <h3 className="mb-4 font-display text-xl font-semibold text-ink">
+            Resorts
+          </h3>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {matchedResorts.map((resort) => (
+              <Link
+                key={resort.id}
+                to={`/viewDetails/${resort.id}`}
+                className="group overflow-hidden rounded-xl border border-ink/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="h-36 overflow-hidden">
+                  <img
+                    src={resort.image}
+                    alt={resort.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-display text-lg font-semibold text-ink">
+                    {resort.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-ink/60">{resort.barangay}</p>
+                  {resort.address && (
+                    <p className="mt-1 line-clamp-2 text-sm text-ink/50">
+                      {resort.address}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
 
       {totalPages > 1 && (

@@ -32,12 +32,18 @@ const Footer = () => {
             </p>
           </div>
 
-          <div className="flex justify-center sm:justify-end">
+          <div className="flex justify-center sm:justify-end gap-2">
             <Link
               to="/adminSignIn"
               className="rounded-full border border-sand-light/30 px-4 py-2 text-sm tracking-wide text-sand-light/80 transition-colors hover:border-sand-light hover:text-sand-light"
             >
               Sign in as admin
+            </Link>
+            <Link
+              to="/owner/login"
+              className="rounded-full border border-sand-light/30 px-4 py-2 text-sm tracking-wide text-sand-light/80 transition-colors hover:border-sand-light hover:text-sand-light"
+            >
+              Sign in as owner
             </Link>
           </div>
         </div>

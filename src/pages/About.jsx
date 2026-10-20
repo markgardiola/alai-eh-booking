@@ -16,14 +16,14 @@ const About = () => {
               Hi! We are Team ALAI-eh!
             </h2>
             <p className="mt-4 text-base leading-relaxed text-ink/75">
-              Welcome to ALAI-eh! We're your gateway to the breathtaking shores
-              of Batangas, where life slows down, and connections grow deeper.
-              Our passion is helping you find the perfect escape — a chance to
-              step away from the daily grind, immerse yourself in nature's
-              beauty, and cherish quality time with family and friends. We
-              believe in the power of a good getaway to nurture the soul,
-              strengthen relationships, and bring peace of mind. Join us as we
-              celebrate life, one beach at a time!
+              Welcome to ALAI-eh! We're your gateway to the Cities of Batangas,
+              where life slows down, and connections grow deeper. Our passion is
+              helping you find the perfect escape — a chance to step away from
+              the daily grind, immerse yourself in nature's beauty, and cherish
+              quality time with family and friends. We believe in the power of a
+              good getaway to nurture the soul, strengthen relationships, and
+              bring peace of mind. Join us as we celebrate life, one resort stay
+              at a time!
             </p>
 
             <h2 className="mt-8 font-display text-3xl font-semibold text-ink">

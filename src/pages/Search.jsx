@@ -23,10 +23,9 @@ const Search = ({ onSearch }) => {
             type="text"
             id="destination"
             name="destination"
-            placeholder="Search by area — e.g. San Vicente, San Pablo, San Felix"
+            placeholder="Search by area or resort name — e.g. San Vicente, BlueRey"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
-            required
             className="border-0 shadow-none focus-visible:ring-0 px-0 text-base h-11"
           />
         </div>
