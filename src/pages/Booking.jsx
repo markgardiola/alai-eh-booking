@@ -22,6 +22,8 @@ import {
   CarouselNext,
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import BookingSteps from "@/components/BookingSteps";
 import StayTypeCalendar from "@/components/StayTypeCalendar";
 import RoomPreviewDialog from "@/components/RoomPreviewDialog";
@@ -64,7 +66,7 @@ const Booking = () => {
   const { resortId } = useParams();
   const navigate = useNavigate();
   const [resort, setResort] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [runBooking, submitting] = useSingleFlight();
   const [bookedBookings, setBookedBookings] = useState([]);
   const [previewRoom, setPreviewRoom] = useState(null);
   const [form, setForm] = useState({
@@ -163,51 +165,44 @@ const Booking = () => {
       return;
     }
 
-    setSubmitting(true);
     const token = localStorage.getItem("token");
 
-    axios
-      .post(
-        `${API_URL}/api/book`,
-        {
-          resortId: resort.id,
-          stayTypeId: form.stayTypeId,
-          date: form.date,
-          fullName: form.fullName,
-          email: form.email,
-          mobile: form.mobile,
-          address: form.address,
-          adults: form.adults,
-          children: form.children,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // needed for req.userId
+    runBooking(() =>
+      axios
+        .post(
+          `${API_URL}/api/book`,
+          {
+            resortId: resort.id,
+            stayTypeId: form.stayTypeId,
+            date: form.date,
+            fullName: form.fullName,
+            email: form.email,
+            mobile: form.mobile,
+            address: form.address,
+            adults: form.adults,
+            children: form.children,
           },
-        },
-      )
-      .then((res) => {
-        const bookingId = res.data.bookingId;
-        localStorage.setItem("bookingId", bookingId);
-
-        toast.success("Booking request submitted!");
-        navigate("/payment");
-      })
-      .catch((err) => {
-        console.error("Booking failed:", err);
-        toast.error(
-          err.response?.data?.message ||
-            "Something went wrong. Please try again.",
-        );
-        if (err.response?.status === 409) {
-          // Someone else grabbed this slot between page load and submit --
-          // refresh the calendar and make them pick again rather than let
-          // them resubmit the same now-invalid date.
-          fetchBookedDates();
-          setForm((prev) => ({ ...prev, date: "" }));
-        }
-      })
-      .finally(() => setSubmitting(false));
+          { headers: { Authorization: `Bearer ${token}` } },
+        )
+        .then((res) => {
+          localStorage.setItem("bookingId", res.data.bookingId);
+          toast.success("Booking request submitted!");
+          navigate("/payment");
+        })
+        .catch((err) => {
+          console.error("Booking failed:", err);
+          toast.error(
+            err.response?.data?.message ||
+              "Something went wrong. Please try again.",
+          );
+          if (err.response?.status === 409) {
+            // Someone else grabbed this slot between page load and submit --
+            // refresh the calendar and make them pick again.
+            fetchBookedDates();
+            setForm((prev) => ({ ...prev, date: "" }));
+          }
+        }),
+    );
   };
 
   if (!resort)
@@ -510,14 +505,15 @@ const Booking = () => {
               </div>
             )}
 
-            <Button
+            <LoadingButton
               type="submit"
               size="lg"
               className="mt-6 w-full"
-              disabled={submitting}
+              loading={submitting}
+              loadingText="Submitting..."
             >
-              {submitting ? "Submitting..." : "Confirm Booking"}
-            </Button>
+              Confirm Booking
+            </LoadingButton>
           </form>
         </div>
       </div>

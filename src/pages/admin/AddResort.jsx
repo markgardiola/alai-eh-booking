@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BARANGAYS } from "@/lib/barangays";
 import { API_URL } from "../../../config";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 
 const AddResort = () => {
   const [name, setName] = useState("");
@@ -36,6 +38,8 @@ const AddResort = () => {
     spansNextDay: false,
     price: "",
   });
+
+  const [runSubmit, submitting] = useSingleFlight();
 
   const [error, setError] = useState("");
 
@@ -102,9 +106,7 @@ const AddResort = () => {
     setStayTypes(stayTypes.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const submitResort = async () => {
     if (
       !name ||
       !barangay ||
@@ -159,8 +161,15 @@ const AddResort = () => {
       navigate("/adminDashboard/resorts");
     } catch (err) {
       console.error(err);
-      setError("Error adding resort. Please try again.");
+      setError(
+        err.response?.data?.message || "Error adding resort. Please try again.",
+      );
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    runSubmit(submitResort);
   };
 
   return (
@@ -557,9 +566,15 @@ const AddResort = () => {
           )}
         </div>
 
-        <Button type="submit" size="lg" className="mt-2">
+        <LoadingButton
+          type="submit"
+          size="lg"
+          className="mt-2"
+          loading={submitting}
+          loadingText="Uploading and saving..."
+        >
           Save Resort
-        </Button>
+        </LoadingButton>
       </form>
     </div>
   );

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
-import { Trash2, User, Mail, Lock, Phone, MapPin } from "lucide-react";
+import { Trash2, User, Mail, Lock, Phone, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import IconInput from "@/components/IconInput";
 import Pagination from "@/components/Pagination";
 import {
@@ -20,6 +22,9 @@ const UsersManagement = () => {
   const [error, setError] = useState("");
   const [editingUser, setEditingUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [runSave, saving] = useSingleFlight();
+  const [runDelete, deleting] = useSingleFlight();
+  const [deletingId, setDeletingId] = useState(null);
   const usersPerPage = 10;
 
   const token = localStorage.getItem("token");
@@ -46,32 +51,37 @@ const UsersManagement = () => {
     setEditingUser({ ...editingUser, [e.target.name]: e.target.value });
   };
 
-  const handleEditSubmit = async () => {
-    try {
-      await axios.put(`${API_URL}/api/users/${editingUser.id}`, editingUser, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("User updated successfully!");
-      setEditingUser(null);
-      fetchUsers();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update user.");
-    }
-  };
+  const handleEditSubmit = () =>
+    runSave(async () => {
+      try {
+        await axios.put(`${API_URL}/api/users/${editingUser.id}`, editingUser, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("User updated successfully!");
+        setEditingUser(null);
+        fetchUsers();
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to update user.");
+      }
+    });
 
-  const handleDeleteUser = async (userId) => {
-    try {
-      await axios.delete(`${API_URL}/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("User deleted successfully!");
-      fetchUsers();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete user.");
-    }
-  };
+  const handleDeleteUser = (userId) =>
+    runDelete(async () => {
+      setDeletingId(userId);
+      try {
+        await axios.delete(`${API_URL}/api/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("User deleted successfully!");
+        fetchUsers();
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to delete user.");
+      } finally {
+        setDeletingId(null);
+      }
+    });
 
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
@@ -138,6 +148,7 @@ const UsersManagement = () => {
                             variant="ghost"
                             size="sm"
                             className="text-seal hover:bg-seal/10 hover:text-seal"
+                            disabled={deleting}
                             onClick={() => {
                               Swal.fire({
                                 title: "Are you sure?",
@@ -154,7 +165,11 @@ const UsersManagement = () => {
                               });
                             }}
                           >
-                            <Trash2 className="size-4" />
+                            {deletingId === user.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4" />
+                            )}
                           </Button>
                         </div>
                       </td>
@@ -262,7 +277,13 @@ const UsersManagement = () => {
                 <Button variant="outline" onClick={() => setEditingUser(null)}>
                   Cancel
                 </Button>
-                <Button onClick={handleEditSubmit}>Save Changes</Button>
+                <LoadingButton
+                  onClick={handleEditSubmit}
+                  loading={saving}
+                  loadingText="Saving..."
+                >
+                  Save Changes
+                </LoadingButton>
               </div>
             </div>
           )}

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
 import { API_URL } from "../../../config";
@@ -11,6 +12,8 @@ import { API_URL } from "../../../config";
 const ManageBooking = () => {
   const [bookings, setBookings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [updatingKey, setUpdatingKey] = useState(null); // "<bookingId>:<status>"
+  const busy = useRef(false);
   const bookingsPerPage = 5;
 
   const navigate = useNavigate();
@@ -33,6 +36,9 @@ const ManageBooking = () => {
   }, []);
 
   const updateBookingStatus = (bookingId, status) => {
+    if (busy.current) return;
+    busy.current = true;
+    setUpdatingKey(`${bookingId}:${status}`);
     axios
       .put(
         `${API_URL}/api/bookings/${bookingId}/status`,
@@ -64,6 +70,10 @@ const ManageBooking = () => {
         } else {
           toast.error("Failed to update booking status");
         }
+      })
+      .finally(() => {
+        busy.current = false;
+        setUpdatingKey(null);
       });
   };
 
@@ -135,10 +145,15 @@ const ManageBooking = () => {
                         </span>
                       ) : (
                         <>
-                          <Button
+                          <LoadingButton
                             variant="secondary"
                             size="sm"
-                            disabled={booking.status === "Confirmed"}
+                            loading={
+                              updatingKey === `${booking.booking_id}:Confirmed`
+                            }
+                            disabled={
+                              booking.status === "Confirmed" || !!updatingKey
+                            }
                             onClick={() => {
                               if (!booking.payment_ready) {
                                 Swal.fire({
@@ -168,12 +183,17 @@ const ManageBooking = () => {
                             }}
                           >
                             Approve
-                          </Button>
-                          <Button
+                          </LoadingButton>
+                          <LoadingButton
                             variant="ghost"
                             size="sm"
                             className="text-seal hover:bg-seal/10 hover:text-seal"
-                            disabled={booking.status === "Cancelled"}
+                            loading={
+                              updatingKey === `${booking.booking_id}:Cancelled`
+                            }
+                            disabled={
+                              booking.status === "Cancelled" || !!updatingKey
+                            }
                             onClick={() => {
                               Swal.fire({
                                 title: "Cancel this booking?",
@@ -197,7 +217,7 @@ const ManageBooking = () => {
                             }}
                           >
                             Cancel
-                          </Button>
+                          </LoadingButton>
                         </>
                       )}
                     </div>

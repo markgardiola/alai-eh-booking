@@ -13,6 +13,8 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import {
   Dialog,
   DialogContent,
@@ -30,11 +32,12 @@ const MyBooking = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [refundTarget, setRefundTarget] = useState(null); // booking being requested for refund
   const [refundReason, setRefundReason] = useState("");
-  const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [runRefund, submittingRefund] = useSingleFlight();
   const [reviewTarget, setReviewTarget] = useState(null); // booking being reviewed
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
-  const [submittingReview, setSubmittingReview] = useState(false);
+  const [runReview, submittingReview] = useSingleFlight();
+  const [runDelete, deleting] = useSingleFlight();
   const bookingsPerPage = 5;
   const navigate = useNavigate();
 
@@ -64,18 +67,18 @@ const MyBooking = () => {
       cancelButtonText: "Cancel",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        try {
-          await axios.delete(`${API_URL}/api/bookings/${bookingId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          fetchBookings();
-          toast.success("Booking removed from your list.");
-        } catch (err) {
-          console.error("Error deleting booking:", err);
-          toast.error("Failed to remove booking.");
-        }
+        runDelete(async () => {
+          try {
+            await axios.delete(`${API_URL}/api/bookings/${bookingId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            fetchBookings();
+            toast.success("Booking removed from your list.");
+          } catch (err) {
+            console.error("Error deleting booking:", err);
+            toast.error("Failed to remove booking.");
+          }
+        });
       }
     });
   };
@@ -83,24 +86,54 @@ const MyBooking = () => {
   const submitRefundRequest = () => {
     if (!refundTarget) return;
 
-    setSubmittingRefund(true);
-    axios
-      .put(
-        `${API_URL}/api/bookings/${refundTarget}/request-refund`,
-        { reason: refundReason },
-        { headers: { Authorization: `Bearer ${token}` } },
-      )
-      .then(() => {
-        toast.success("Cancellation/refund request submitted.");
-        setRefundTarget(null);
-        setRefundReason("");
-        fetchBookings();
-      })
-      .catch((err) => {
-        console.error("Error requesting refund:", err);
-        toast.error(err.response?.data?.error || "Failed to submit request.");
-      })
-      .finally(() => setSubmittingRefund(false));
+    runRefund(() =>
+      axios
+        .put(
+          `${API_URL}/api/bookings/${refundTarget}/request-refund`,
+          { reason: refundReason },
+          { headers: { Authorization: `Bearer ${token}` } },
+        )
+        .then(() => {
+          toast.success("Cancellation/refund request submitted.");
+          setRefundTarget(null);
+          setRefundReason("");
+          fetchBookings();
+        })
+        .catch((err) => {
+          console.error("Error requesting refund:", err);
+          toast.error(err.response?.data?.error || "Failed to submit request.");
+        }),
+    );
+  };
+
+  const submitReview = () => {
+    if (!reviewTarget || reviewRating === 0) return;
+
+    runReview(() =>
+      axios
+        .post(
+          `${API_URL}/api/reviews`,
+          {
+            bookingId: reviewTarget,
+            rating: reviewRating,
+            comment: reviewComment,
+          },
+          { headers: { Authorization: `Bearer ${token}` } },
+        )
+        .then(() => {
+          toast.success("Review submitted. Thank you!");
+          setReviewTarget(null);
+          setReviewRating(0);
+          setReviewComment("");
+          fetchBookings();
+        })
+        .catch((err) => {
+          console.error("Error submitting review:", err);
+          toast.error(
+            err.response?.data?.message || "Failed to submit review.",
+          );
+        }),
+    );
   };
 
   // Mirrors the server-side check in reviewController.createReview: a stay
@@ -121,34 +154,6 @@ const MyBooking = () => {
     booking.status === "Cancelled" ||
     (booking.status === "Confirmed" &&
       (booking.has_review || isStayOver(booking)));
-
-  const submitReview = () => {
-    if (!reviewTarget || reviewRating === 0) return;
-
-    setSubmittingReview(true);
-    axios
-      .post(
-        `${API_URL}/api/reviews`,
-        {
-          bookingId: reviewTarget,
-          rating: reviewRating,
-          comment: reviewComment,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      )
-      .then(() => {
-        toast.success("Review submitted. Thank you!");
-        setReviewTarget(null);
-        setReviewRating(0);
-        setReviewComment("");
-        fetchBookings();
-      })
-      .catch((err) => {
-        console.error("Error submitting review:", err);
-        toast.error(err.response?.data?.message || "Failed to submit review.");
-      })
-      .finally(() => setSubmittingReview(false));
-  };
 
   useEffect(() => {
     fetchBookings();
@@ -277,6 +282,7 @@ const MyBooking = () => {
                       variant="ghost"
                       size="sm"
                       className="text-seal hover:bg-seal/10 hover:text-seal"
+                      disabled={deleting}
                       onClick={() => deleteBooking(booking.id)}
                     >
                       <Trash2 className="size-4" />
@@ -352,9 +358,13 @@ const MyBooking = () => {
             <Button variant="outline" onClick={() => setRefundTarget(null)}>
               Never mind
             </Button>
-            <Button onClick={submitRefundRequest} disabled={submittingRefund}>
-              {submittingRefund ? "Submitting..." : "Submit Request"}
-            </Button>
+            <LoadingButton
+              onClick={submitRefundRequest}
+              loading={submittingRefund}
+              loadingText="Submitting..."
+            >
+              Submit Request
+            </LoadingButton>
           </div>
         </DialogContent>
       </Dialog>
@@ -390,12 +400,14 @@ const MyBooking = () => {
             <Button variant="outline" onClick={() => setReviewTarget(null)}>
               Never mind
             </Button>
-            <Button
+            <LoadingButton
               onClick={submitReview}
-              disabled={submittingReview || reviewRating === 0}
+              loading={submittingReview}
+              loadingText="Submitting..."
+              disabled={reviewRating === 0}
             >
-              {submittingReview ? "Submitting..." : "Submit Review"}
-            </Button>
+              Submit Review
+            </LoadingButton>
           </div>
         </DialogContent>
       </Dialog>

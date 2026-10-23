@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
 import { Card } from "@/components/ui/card";
 import { API_URL } from "../../../config";
 
 const AdminRefundRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processingKey, setProcessingKey] = useState(null); // "<bookingId>:approve|deny"
+  const busy = useRef(false);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -42,6 +45,9 @@ const AdminRefundRequests = () => {
       confirmButtonText: "Approve refund",
     }).then((result) => {
       if (!result.isConfirmed) return;
+      if (busy.current) return;
+      busy.current = true;
+      setProcessingKey(`${bookingId}:approve`); // use ":deny" in denyRefund
 
       axios
         .put(
@@ -57,9 +63,10 @@ const AdminRefundRequests = () => {
           );
           fetchRequests();
         })
-        .catch((err) => {
-          console.error("Error approving refund:", err);
-          toast.error(err.response?.data?.error || "Failed to approve refund.");
+        .catch(err)
+        .finally(() => {
+          busy.current = false;
+          setProcessingKey(null);
         });
     });
   };
@@ -156,21 +163,27 @@ const AdminRefundRequests = () => {
                 >
                   View Details
                 </Button>
-                <Button
+                <LoadingButton
                   variant="secondary"
                   size="sm"
+                  loading={processingKey === `${r.booking_id}:approve`}
+                  loadingText="Processing refund..."
+                  disabled={!!processingKey}
                   onClick={() => approveRefund(r.booking_id)}
                 >
                   Approve Refund
-                </Button>
-                <Button
+                </LoadingButton>
+                <LoadingButton
                   variant="ghost"
                   size="sm"
                   className="text-seal hover:bg-seal/10 hover:text-seal"
+                  loading={processingKey === `${r.booking_id}:deny`}
+                  loadingText="Denying..."
+                  disabled={!!processingKey}
                   onClick={() => denyRefund(r.booking_id)}
                 >
                   Deny
-                </Button>
+                </LoadingButton>
               </div>
             </Card>
           ))}

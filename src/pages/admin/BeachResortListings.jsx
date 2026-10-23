@@ -3,15 +3,19 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
-import { Plus, Trash2, MapPin } from "lucide-react";
+import { Plus, Trash2, MapPin, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import Pagination from "@/components/Pagination";
 import { API_URL } from "../../../config";
 
 const BeachResortListings = () => {
   const [resorts, setResorts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [runDelete, deleting] = useSingleFlight();
+  const [deletingId, setDeletingId] = useState(null);
   const resortsPerPage = 6;
 
   const fetchResorts = async () => {
@@ -27,19 +31,23 @@ const BeachResortListings = () => {
     fetchResorts();
   }, []);
 
-  const handleDeleteResort = async (resortId) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_URL}/api/resorts/${resortId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setResorts((prev) => prev.filter((resort) => resort.id !== resortId));
-      toast.success("Resort deleted successfully!");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete resort.");
-    }
-  };
+  const handleDeleteResort = (resortId) =>
+    runDelete(async () => {
+      setDeletingId(resortId);
+      try {
+        const token = localStorage.getItem("token");
+        await axios.delete(`${API_URL}/api/resorts/${resortId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setResorts((prev) => prev.filter((resort) => resort.id !== resortId));
+        toast.success("Resort deleted successfully!");
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete resort.");
+      } finally {
+        setDeletingId(null);
+      }
+    });
 
   const indexOfLastResort = currentPage * resortsPerPage;
   const indexOfFirstResort = indexOfLastResort - resortsPerPage;
@@ -98,6 +106,7 @@ const BeachResortListings = () => {
                     variant="ghost"
                     size="sm"
                     className="ml-auto text-seal hover:bg-seal/10 hover:text-seal"
+                    disabled={deleting}
                     onClick={() => {
                       Swal.fire({
                         title: "Are you sure?",
@@ -114,7 +123,11 @@ const BeachResortListings = () => {
                       });
                     }}
                   >
-                    <Trash2 className="size-4" />
+                    {deletingId === resort.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-4" />
+                    )}
                   </Button>
                 </div>
               </div>

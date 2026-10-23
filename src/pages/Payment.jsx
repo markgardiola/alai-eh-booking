@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import { Input } from "@/components/ui/input";
 import BookingSteps from "@/components/BookingSteps";
 import { cn } from "@/lib/utils";
@@ -23,10 +25,11 @@ const Payment = () => {
 
   const [receipt, setReceipt] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [submittingReceipt, setSubmittingReceipt] = useState(false);
+  const [runReceipt, submittingReceipt] = useSingleFlight();
 
   const [promoCode, setPromoCode] = useState("");
-  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [runApplyPromo, applyingPromo] = useSingleFlight();
+  const [runRemovePromo, removingPromo] = useSingleFlight();
   const [promoError, setPromoError] = useState("");
 
   const navigate = useNavigate();
@@ -54,63 +57,55 @@ const Payment = () => {
       });
   }, [bookingId, navigate, token]);
 
-  const applyPromo = async () => {
+  const applyPromo = () => {
     if (!promoCode.trim()) return;
 
-    setApplyingPromo(true);
-    setPromoError("");
-    try {
-      const res = await axios.post(
-        `${API_URL}/api/bookings/${bookingId}/apply-promo`,
-        { code: promoCode },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      setBooking((prev) => ({
-        ...prev,
-        promo_code: res.data.promoCode,
-        discount_amount: res.data.discountAmount,
-        total_price: res.data.totalPrice,
-      }));
-      toast.success("Promo code applied!");
-    } catch (err) {
-      console.error("Error applying promo code:", err);
-      setPromoError(
-        err.response?.data?.message || "Failed to apply promo code.",
-      );
-    } finally {
-      setApplyingPromo(false);
-    }
-  };
-
-  const removePromo = async () => {
-    try {
-      const res = await axios.delete(
-        `${API_URL}/api/bookings/${bookingId}/promo`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      setBooking((prev) => ({
-        ...prev,
-        promo_code: null,
-        discount_amount: 0,
-        total_price: res.data.totalPrice,
-      }));
-      setPromoCode("");
+    runApplyPromo(async () => {
       setPromoError("");
-    } catch (err) {
-      console.error("Error removing promo code:", err);
-      toast.error("Failed to remove promo code.");
-    }
+      try {
+        const res = await axios.post(
+          `${API_URL}/api/bookings/${bookingId}/apply-promo`,
+          { code: promoCode },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        setBooking((prev) => ({
+          ...prev,
+          promo_code: res.data.promoCode,
+          discount_amount: res.data.discountAmount,
+          total_price: res.data.totalPrice,
+        }));
+        toast.success("Promo code applied!");
+      } catch (err) {
+        console.error("Error applying promo code:", err);
+        setPromoError(
+          err.response?.data?.message || "Failed to apply promo code.",
+        );
+      }
+    });
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setReceipt(file);
-    setPreview(URL.createObjectURL(file));
-  };
+  const removePromo = () =>
+    runRemovePromo(async () => {
+      try {
+        const res = await axios.delete(
+          `${API_URL}/api/bookings/${bookingId}/promo`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        setBooking((prev) => ({
+          ...prev,
+          promo_code: null,
+          discount_amount: 0,
+          total_price: res.data.totalPrice,
+        }));
+        setPromoCode("");
+        setPromoError("");
+      } catch (err) {
+        console.error("Error removing promo code:", err);
+        toast.error("Failed to remove promo code.");
+      }
+    });
 
-  const handleGcashSubmit = async (e) => {
+  const handleGcashSubmit = (e) => {
     e.preventDefault();
 
     if (!receipt) {
@@ -118,28 +113,33 @@ const Payment = () => {
       return;
     }
 
-    setSubmittingReceipt(true);
-    try {
-      const formData = new FormData();
-      formData.append("receipt", receipt);
-      formData.append("bookingId", bookingId);
+    runReceipt(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("receipt", receipt);
+        formData.append("bookingId", bookingId);
 
-      await axios.post(`${API_URL}/api/upload_receipt`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        await axios.post(`${API_URL}/api/upload_receipt`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      toast.success("Receipt uploaded! We'll confirm your booking shortly.");
-      localStorage.removeItem("bookingId");
-      navigate("/myBooking");
-    } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error("Failed to upload receipt. Try again.");
-    } finally {
-      setSubmittingReceipt(false);
-    }
+        toast.success("Receipt uploaded! We'll confirm your booking shortly.");
+        localStorage.removeItem("bookingId");
+        navigate("/myBooking");
+      } catch (error) {
+        console.error("Upload failed:", error);
+        toast.error("Failed to upload receipt. Try again.");
+      }
+    });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setReceipt(file);
+    setPreview(URL.createObjectURL(file));
   };
 
   if (!booking) {
@@ -198,7 +198,8 @@ const Payment = () => {
                 </span>
                 <button
                   onClick={removePromo}
-                  className="text-ink/50 hover:text-seal"
+                  disabled={removingPromo}
+                  className="text-ink/50 hover:text-seal disabled:opacity-40"
                   aria-label="Remove promo code"
                 >
                   <X className="size-4" />
@@ -217,13 +218,15 @@ const Payment = () => {
                       placeholder="Promo code"
                       className="uppercase"
                     />
-                    <Button
+                    <LoadingButton
                       variant="outline"
                       onClick={applyPromo}
-                      disabled={applyingPromo || !promoCode.trim()}
+                      loading={applyingPromo}
+                      loadingText="Applying..."
+                      disabled={!promoCode.trim()}
                     >
-                      {applyingPromo ? "Applying..." : "Apply"}
-                    </Button>
+                      Apply
+                    </LoadingButton>
                   </div>
                   {promoError && (
                     <p className="mt-1.5 text-xs text-seal">{promoError}</p>
@@ -404,14 +407,15 @@ const Payment = () => {
                   "Pending" until an admin confirms your receipt.
                 </p>
 
-                <Button
+                <LoadingButton
                   type="submit"
                   size="lg"
                   className="mt-4 w-full"
-                  disabled={submittingReceipt}
+                  loading={submittingReceipt}
+                  loadingText="Uploading receipt..."
                 >
-                  {submittingReceipt ? "Submitting..." : "Submit Receipt"}
-                </Button>
+                  Submit Receipt
+                </LoadingButton>
               </form>
             </div>
           )}

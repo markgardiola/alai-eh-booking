@@ -6,6 +6,8 @@ import Swal from "sweetalert2";
 import { ArrowLeft, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +52,8 @@ const EditResort = () => {
     spansNextDay: false,
     price: "",
   });
-  const [savingStayType, setSavingStayType] = useState(false);
+  const [runSave, saving] = useSingleFlight();
+  const [runSaveStayType, savingStayType] = useSingleFlight();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -122,8 +125,7 @@ const EditResort = () => {
     setStayTypeEditingId(stayType.id);
   };
 
-  const handleSaveStayType = async () => {
-    setSavingStayType(true);
+  const saveStayType = async () => {
     try {
       if (stayTypeEditingId === "new") {
         await axios.post(
@@ -145,10 +147,10 @@ const EditResort = () => {
     } catch (err) {
       console.error("Error saving stay type:", err);
       toast.error(err.response?.data?.message || "Failed to save stay type.");
-    } finally {
-      setSavingStayType(false);
     }
   };
+
+  const handleSaveStayType = () => runSaveStayType(saveStayType);
 
   const handleDeleteStayType = (stayType) => {
     Swal.fire({
@@ -281,9 +283,7 @@ const EditResort = () => {
     setResortData({ ...resortData, amenities: updatedAmenities });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const saveResort = async () => {
     if (existingImages.length === 0 && newImages.length === 0) {
       toast.error("Please keep or add at least one image.");
       return;
@@ -353,8 +353,13 @@ const EditResort = () => {
       navigate("/adminDashboard/resorts");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update resort.");
+      toast.error(error.response?.data?.message || "Failed to update resort.");
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    runSave(saveResort);
   };
 
   if (loading) return <div className="text-center text-ink/60">Loading...</div>;
@@ -439,7 +444,6 @@ const EditResort = () => {
             value={resortData.location}
             onChange={handleChange}
             placeholder="e.g. Purok 3, San Vicente, Sto. Tomas City, Batangas"
-            required
             className="mt-1.5"
           />
           <p className="mt-1 text-xs text-ink/50">
@@ -758,9 +762,15 @@ const EditResort = () => {
       </div>
 
       <div className="mt-8 flex justify-end border-t border-ink/10 pt-5">
-        <Button type="submit" form="edit-resort-form" size="lg">
+        <LoadingButton
+          type="submit"
+          form="edit-resort-form"
+          size="lg"
+          loading={saving}
+          loadingText="Saving changes..."
+        >
           Update Resort
-        </Button>
+        </LoadingButton>
       </div>
 
       <Dialog
@@ -862,9 +872,13 @@ const EditResort = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveStayType} disabled={savingStayType}>
-                {savingStayType ? "Saving..." : "Save"}
-              </Button>
+              <LoadingButton
+                onClick={handleSaveStayType}
+                loading={savingStayType}
+                loadingText="Saving..."
+              >
+                Save
+              </LoadingButton>
             </div>
           </div>
         </DialogContent>

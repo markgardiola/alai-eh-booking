@@ -16,6 +16,8 @@ import {
   isValidPhilippinePhone,
 } from "@/lib/phoneValidation";
 import { API_URL } from "../../config";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -28,9 +30,9 @@ const SignUp = () => {
     password: "",
   });
   const [otp, setOtp] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [resending, setResending] = useState(false);
+  const [runRequestOtp, submitting] = useSingleFlight();
+  const [runVerify, verifying] = useSingleFlight();
+  const [runResend, resending] = useSingleFlight();
 
   const resendCooldown = useCountdown();
   const navigate = useNavigate();
@@ -50,21 +52,21 @@ const SignUp = () => {
       return;
     }
 
-    setSubmitting(true);
-    axios
-      .post(`${API_URL}/api/register/request-otp`, values)
-      .then(() => {
-        toast.success("We sent a verification code to your phone.");
-        setStep(2);
-        resendCooldown.start(RESEND_COOLDOWN_SECONDS);
-      })
-      .catch((err) => {
-        toast.error(
-          err.response?.data?.message ||
-            "Something went wrong. Please try again.",
-        );
-      })
-      .finally(() => setSubmitting(false));
+    runRequestOtp(() =>
+      axios
+        .post(`${API_URL}/api/register/request-otp`, values)
+        .then(() => {
+          toast.success("We sent a verification code to your phone.");
+          setStep(2);
+          resendCooldown.start(RESEND_COOLDOWN_SECONDS);
+        })
+        .catch((err) => {
+          toast.error(
+            err.response?.data?.message ||
+              "Something went wrong. Please try again.",
+          );
+        }),
+    );
   };
 
   const handleVerifyOtp = (e) => {
@@ -75,41 +77,44 @@ const SignUp = () => {
       return;
     }
 
-    setVerifying(true);
-    axios
-      .post(`${API_URL}/api/register/verify-otp`, { email: values.email, otp })
-      .then((res) => {
-        const { token, user } = res.data;
-        localStorage.setItem("token", token);
-        localStorage.setItem("userId", user.id);
-        localStorage.setItem("username", user.username);
-        localStorage.setItem("email", user.email);
-        localStorage.setItem("role", user.role);
+    runVerify(() =>
+      axios
+        .post(`${API_URL}/api/register/verify-otp`, {
+          email: values.email,
+          otp,
+        })
+        .then((res) => {
+          const { token, user } = res.data;
+          localStorage.setItem("token", token);
+          localStorage.setItem("userId", user.id);
+          localStorage.setItem("username", user.username);
+          localStorage.setItem("email", user.email);
+          localStorage.setItem("role", user.role);
 
-        toast.success("Account verified! Welcome to ALAI-eh.");
-        navigate("/");
-      })
-      .catch((err) => {
-        toast.error(
-          err.response?.data?.message || "Incorrect code. Please try again.",
-        );
-      })
-      .finally(() => setVerifying(false));
+          toast.success("Account verified! Welcome to ALAI-eh.");
+          navigate("/");
+        })
+        .catch((err) => {
+          toast.error(
+            err.response?.data?.message || "Incorrect code. Please try again.",
+          );
+        }),
+    );
   };
 
   const handleResend = () => {
-    setResending(true);
-    axios
-      .post(`${API_URL}/api/register/resend-otp`, { email: values.email })
-      .then(() => {
-        toast.success("A new code has been sent.");
-        setOtp("");
-        resendCooldown.start(RESEND_COOLDOWN_SECONDS);
-      })
-      .catch((err) => {
-        toast.error(err.response?.data?.message || "Failed to resend code.");
-      })
-      .finally(() => setResending(false));
+    runResend(() =>
+      axios
+        .post(`${API_URL}/api/register/resend-otp`, { email: values.email })
+        .then(() => {
+          toast.success("A new code has been sent.");
+          setOtp("");
+          resendCooldown.start(RESEND_COOLDOWN_SECONDS);
+        })
+        .catch((err) => {
+          toast.error(err.response?.data?.message || "Failed to resend code.");
+        }),
+    );
   };
 
   const maskedPhone = (() => {
@@ -221,14 +226,15 @@ const SignUp = () => {
               </div>
             </div>
 
-            <Button
+            <LoadingButton
               type="submit"
               size="lg"
               className="mt-2 w-full"
-              disabled={submitting}
+              loading={submitting}
+              loadingText="Sending code..."
             >
-              {submitting ? "Sending code..." : "Continue"}
-            </Button>
+              Continue
+            </LoadingButton>
 
             <p className="text-center text-sm text-ink/60">
               Already have an account?{" "}
@@ -254,14 +260,15 @@ const SignUp = () => {
           <form onSubmit={handleVerifyOtp} className="mt-6 flex flex-col gap-5">
             <OtpInput value={otp} onChange={setOtp} disabled={verifying} />
 
-            <Button
+            <LoadingButton
               type="submit"
               size="lg"
               className="w-full"
-              disabled={verifying}
+              loading={verifying}
+              loadingText="Verifying..."
             >
-              {verifying ? "Verifying..." : "Verify & Create Account"}
-            </Button>
+              Verify & Create Account
+            </LoadingButton>
 
             <div className="flex items-center justify-between text-sm">
               <button
