@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import Pagination from "@/components/Pagination";
 import StarRating from "@/components/StarRating";
 import { API_URL } from "../../../config";
@@ -14,6 +15,8 @@ const FEEDBACKS_PER_PAGE = 6;
 const CustomerFeedback = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [runDelete, deleting] = useSingleFlight();
+  const [deletingId, setDeletingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const token = localStorage.getItem("token");
 
@@ -44,18 +47,21 @@ const CustomerFeedback = () => {
     }).then((result) => {
       if (!result.isConfirmed) return;
 
-      axios
-        .delete(`${API_URL}/api/reviews/${reviewId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then(() => {
+      runDelete(async () => {
+        setDeletingId(reviewId);
+        try {
+          await axios.delete(`${API_URL}/api/reviews/${reviewId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           toast.success("Review deleted.");
           fetchReviews();
-        })
-        .catch((err) => {
+        } catch (err) {
           console.error("Error deleting review:", err);
           toast.error("Failed to delete review.");
-        });
+        } finally {
+          setDeletingId(null);
+        }
+      });
     });
   };
 
@@ -90,9 +96,14 @@ const CustomerFeedback = () => {
                   size="icon"
                   className="size-7 text-ink/40 hover:bg-seal/10 hover:text-seal"
                   onClick={() => handleDelete(review.id)}
+                  disabled={deleting}
                   aria-label="Delete review"
                 >
-                  <Trash2 className="size-4" />
+                  {deletingId === review.id ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
                 </Button>
               </div>
 

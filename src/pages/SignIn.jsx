@@ -5,11 +5,13 @@ import { toast } from "react-toastify";
 import AuthShell from "@/components/AuthShell";
 import PasswordInput from "@/components/PasswordInput";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import { API_URL } from "../../config";
 
 const SignIn = () => {
   const [values, setValues] = useState({ email: "", password: "" });
+  const [runSignIn, signingIn] = useSingleFlight();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -20,54 +22,56 @@ const SignIn = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    axios
-      .post(`${API_URL}/api/login`, {
-        email: values.email,
-        password: values.password,
-      })
-      .then((res) => {
-        if (res.data.token && res.data.user) {
-          const { token, user } = res.data;
+    runSignIn(() =>
+      axios
+        .post(`${API_URL}/api/login`, {
+          email: values.email,
+          password: values.password,
+        })
+        .then((res) => {
+          if (res.data.token && res.data.user) {
+            const { token, user } = res.data;
 
-          localStorage.setItem("token", token);
-          localStorage.setItem("userId", user.id);
-          localStorage.setItem("username", user.username);
-          localStorage.setItem("email", user.email);
-          localStorage.setItem("role", user.role);
+            localStorage.setItem("token", token);
+            localStorage.setItem("userId", user.id);
+            localStorage.setItem("username", user.username);
+            localStorage.setItem("email", user.email);
+            localStorage.setItem("role", user.role);
 
-          toast.success(res.data.success, {
-            position: "top-right",
-            autoClose: 3000,
-          });
+            toast.success(res.data.success, {
+              position: "top-right",
+              autoClose: 3000,
+            });
 
-          navigate("/");
-        } else {
-          toast.error("Invalid server response.", {
-            position: "top-right",
-            autoClose: 3000,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log("Login error:", err);
+            navigate("/");
+          } else {
+            toast.error("Invalid server response.", {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          }
+        })
+        .catch((err) => {
+          console.log("Login error:", err);
 
-        if (err.response?.data?.message) {
-          toast.error(err.response.data.message, {
-            position: "top-right",
-            autoClose: 3000,
-          });
-        } else if (err.message === "Network Error") {
-          toast.error("Unable to connect to the server.", {
-            position: "top-right",
-            autoClose: 3000,
-          });
-        } else {
-          toast.error("An unexpected error occurred.", {
-            position: "top-right",
-            autoClose: 3000,
-          });
-        }
-      });
+          if (err.response?.data?.message) {
+            toast.error(err.response.data.message, {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          } else if (err.message === "Network Error") {
+            toast.error("Unable to connect to the server.", {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          } else {
+            toast.error("An unexpected error occurred.", {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          }
+        }),
+    );
   };
 
   return (
@@ -120,9 +124,15 @@ const SignIn = () => {
           </div>
         </div>
 
-        <Button type="submit" size="lg" className="mt-2 w-full">
+        <LoadingButton
+          type="submit"
+          size="lg"
+          className="mt-2 w-full"
+          loading={signingIn}
+          loadingText="Signing in..."
+        >
           Sign In
-        </Button>
+        </LoadingButton>
 
         <p className="text-center text-sm text-ink/60">
           Don't have an account yet?{" "}

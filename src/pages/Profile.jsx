@@ -4,8 +4,10 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { User, Mail, Lock, Phone, MapPin } from "lucide-react";
 import IconInput from "@/components/IconInput";
-import { Button } from "@/components/ui/button";
+import LoadingButton from "@/components/LoadingButton";
+import useSingleFlight from "@/hooks/useSingleFlight";
 import { API_URL } from "../../config";
+import { Button } from "@/components/ui/button";
 
 const Profile = () => {
   const [user, setUser] = useState({
@@ -16,6 +18,7 @@ const Profile = () => {
     address: "",
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [runUpdate, updating] = useSingleFlight();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,19 +87,21 @@ const Profile = () => {
       updatedUser.password = user.password;
     }
 
-    axios
-      .post(`${API_URL}/api/update_user`, updatedUser, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      })
-      .then((res) => {
-        toast.success(res.data.message || "Profile updated successfully!");
-        setIsEditing(false);
-        setUser((prev) => ({ ...prev, password: "" }));
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Error updating profile!");
-      });
+    runUpdate(() =>
+      axios
+        .post(`${API_URL}/api/update_user`, updatedUser, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        })
+        .then((res) => {
+          toast.success(res.data.message || "Profile updated successfully!");
+          setIsEditing(false);
+          setUser((prev) => ({ ...prev, password: "" }));
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Error updating profile!");
+        }),
+    );
   };
 
   return (
@@ -193,7 +198,13 @@ const Profile = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Save Changes</Button>
+                <LoadingButton
+                  type="submit"
+                  loading={updating}
+                  loadingText={"Saving..."}
+                >
+                  Save Changes
+                </LoadingButton>
               </div>
             </form>
           ) : (

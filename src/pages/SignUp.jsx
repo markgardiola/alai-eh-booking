@@ -8,8 +8,6 @@ import PasswordInput from "@/components/PasswordInput";
 import IconInput from "@/components/IconInput";
 import OtpInput from "@/components/OtpInput";
 import StepIndicator from "@/components/StepIndicator";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useCountdown } from "@/lib/useCountdown";
 import {
   normalizePhilippinePhone,

@@ -3,9 +3,12 @@ import { createRoot } from "react-dom/client";
 
 import "./index.css";
 import App from "./App.jsx";
+import { setupAuthGuard } from "./lib/authGuard";
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+setupAuthGuard().finally(() => {
+  createRoot(document.getElementById("root")).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+});
