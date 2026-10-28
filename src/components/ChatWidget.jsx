@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { MessageCircle, X, Send, Loader2, Waves } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Loader2,
+  Waves,
+  Navigation,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { API_URL } from "../../config";
@@ -115,13 +122,26 @@ const ChatWidget = () => {
                 </div>
                 {m.actions?.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {m.actions.map((a, j) => (
-                      <Link key={j} to={a.url} onClick={() => setOpen(false)}>
-                        <Button size="sm" variant="outline">
-                          {a.label}
+                    {m.actions.map((a, j) =>
+                      a.external && /^https:\/\//.test(a.url) ? (
+                        <Button key={j} size="sm" variant="outline" asChild>
+                          <a
+                            href={a.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Navigation className="size-3.5" />
+                            {a.label}
+                          </a>
                         </Button>
-                      </Link>
-                    ))}
+                      ) : (
+                        <Link key={j} to={a.url} onClick={() => setOpen(false)}>
+                          <Button size="sm" variant="outline">
+                            {a.label}
+                          </Button>
+                        </Link>
+                      ),
+                    )}
                   </div>
                 )}
               </div>
