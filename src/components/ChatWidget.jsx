@@ -34,6 +34,18 @@ const ChatWidget = () => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, open]);
 
+  // On phones the open chat is a full-screen sheet, so stop the page
+  // behind it from scrolling.
+  useEffect(() => {
+    if (!open) return;
+    if (!window.matchMedia("(max-width: 639px)").matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   const sendMessage = async (e) => {
     e.preventDefault();
     const text = input.trim();
@@ -75,11 +87,11 @@ const ChatWidget = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {open && (
-        <div className="flex h-[520px] w-[360px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+        <div className="fixed inset-0 flex flex-col overflow-hidden bg-card sm:static sm:inset-auto sm:h-[min(520px,calc(100dvh-8rem))] sm:w-[360px] sm:rounded-xl sm:border sm:border-border sm:shadow-xl">
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-border bg-primary px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border bg-primary px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20">
               <Waves className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -101,7 +113,7 @@ const ChatWidget = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
             {messages.map((m, i) => (
               <div
                 key={i}
@@ -158,7 +170,7 @@ const ChatWidget = () => {
           {/* Input */}
           <form
             onSubmit={sendMessage}
-            className="flex items-center gap-2 border-t border-border p-3"
+            className="flex items-center gap-2 border-t border-border px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
           >
             <input
               type="text"
@@ -166,7 +178,7 @@ const ChatWidget = () => {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about a resort, dates, your booking..."
               disabled={loading}
-              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50"
+              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 sm:text-sm"
             />
             <Button
               type="submit"
@@ -181,7 +193,10 @@ const ChatWidget = () => {
 
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:bg-lagoon-dark"
+        className={cn(
+          "flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:bg-lagoon-dark",
+          open && "max-sm:hidden",
+        )}
         aria-label={open ? "Close SandyAI chat" : "Chat with SandyAI"}
       >
         {open ? (

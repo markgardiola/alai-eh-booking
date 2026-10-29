@@ -114,26 +114,33 @@ const ViewDetails = () => {
               </p>
             )}
           </div>
-          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-base text-ink/60">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="size-4 text-lagoon-dark" />
-              {resort.barangay && (
-                <span className="font-medium text-ink">{resort.barangay}</span>
-              )}
-              {resort.barangay && " · "}
-              <ResortLocation resort={resort} />
-            </span>
+          <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-8">
+            <div className="flex items-start gap-2.5">
+              <MapPin className="mt-1 size-4 shrink-0 text-lagoon-dark" />
+              <div className="min-w-0">
+                {resort.barangay && (
+                  <p className="font-medium leading-snug text-ink">
+                    {resort.barangay}
+                  </p>
+                )}
+                <ResortLocation
+                  resort={resort}
+                  className="text-sm leading-snug text-ink/60 sm:text-base"
+                />
+              </div>
+            </div>
+
             {resort.rating?.count > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Star className="size-4 fill-lagoon text-lagoon" />
+              <div className="flex items-center gap-1.5 text-sm text-ink/60 sm:mt-0.5 sm:text-base">
+                <Star className="size-4 shrink-0 fill-lagoon text-lagoon" />
                 <span className="font-medium text-ink">
                   {resort.rating.average.toFixed(1)}
                 </span>
                 ({resort.rating.count} review
                 {resort.rating.count > 1 ? "s" : ""})
-              </span>
+              </div>
             )}
-          </p>
+          </div>
           <p className="mt-4 text-base leading-relaxed text-ink/75">
             {resort.description}
           </p>

@@ -10,6 +10,7 @@ import {
   BadgeAlert,
   BadgePercent,
 } from "lucide-react";
+import SidebarShell from "./SidebarShell";
 import { cn } from "@/lib/utils";
 import { API_URL } from "../../config";
 
@@ -48,7 +49,7 @@ const navItems = [
 
 const POLL_INTERVAL_MS = 30000;
 
-const AdminSideBar = () => {
+const AdminSideBar = ({ open, onClose }) => {
   const [refundRequestCount, setRefundRequestCount] = useState(0);
   const [gcashPendingCount, setGcashPendingCount] = useState(0);
   const token = localStorage.getItem("token");
@@ -89,7 +90,7 @@ const AdminSideBar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-ink">
+    <SidebarShell open={open} onClose={onClose}>
       <div className="flex items-center gap-2.5 p-4">
         <img
           src="/images/logo.png"
@@ -101,7 +102,7 @@ const AdminSideBar = () => {
         </span>
       </div>
 
-      <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
+      <nav className="mt-4 flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
         {navItems.map(({ to, end, label, icon, badgeKey }) => {
           const Icon = icon;
           const badgeCount = badgeKey ? badgeCounts[badgeKey] : 0;
@@ -110,6 +111,7 @@ const AdminSideBar = () => {
               key={to}
               to={to}
               end={end}
+              onClick={onClose}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
@@ -130,7 +132,7 @@ const AdminSideBar = () => {
           );
         })}
       </nav>
-    </aside>
+    </SidebarShell>
   );
 };
 

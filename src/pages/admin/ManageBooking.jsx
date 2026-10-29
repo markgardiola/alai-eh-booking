@@ -92,7 +92,7 @@ const ManageBooking = () => {
       </h1>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
             <tr className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink/50">
               <th className="px-4 py-3 font-medium">Booking ID</th>

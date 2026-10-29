@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 const COORDS = /^-?\d{1,3}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/;
 const URL_PATTERN = /^(https?:\/\/|www\.)\S+$/i;
@@ -50,7 +51,7 @@ function getDisplayAddress(resort) {
   return loc && !URL_PATTERN.test(loc) && !COORDS.test(loc) ? loc : "";
 }
 
-const ResortLocation = ({ resort }) => {
+const ResortLocation = ({ resort, className }) => {
   const [open, setOpen] = useState(false);
 
   const label = getDisplayAddress(resort) || "View on map";
@@ -69,7 +70,10 @@ const ResortLocation = ({ resort }) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-left underline-offset-2 hover:underline"
+        className={cn(
+          "text-left underline-offset-2 hover:underline",
+          className,
+        )}
       >
         {label}
       </button>

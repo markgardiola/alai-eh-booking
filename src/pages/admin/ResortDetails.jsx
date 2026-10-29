@@ -73,31 +73,39 @@ const ResortDetails = () => {
           <span className="text-sm font-normal text-ink/50"> per stay</span>
         </p>
       )}
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-ink/60">
-        <MapPin className="size-4 text-lagoon-dark" />
-        {resort.barangay && (
-          <span className="font-medium text-ink">{resort.barangay}</span>
-        )}
-        {resort.barangay && " · "}
-        <ResortLocation resort={resort} />
-      </p>
+      <div className="mt-3 flex items-start gap-2.5 text-sm">
+        <MapPin className="mt-0.5 size-4 shrink-0 text-lagoon-dark" />
+        <div className="min-w-0">
+          {resort.barangay && (
+            <p className="font-medium leading-snug text-ink">
+              {resort.barangay}
+            </p>
+          )}
+          <ResortLocation
+            resort={resort}
+            className="leading-snug text-ink/60"
+          />
+        </div>
+      </div>
+
       {resort.owner_name && (
-        <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink/60">
-          <UserCircle className="size-4 text-lagoon-dark" />
-          Owner: <span className="text-ink">{resort.owner_name}</span>
-          {resort.owner_email && (
-            <>
-              {" "}
-              ·{" "}
+        <div className="mt-2.5 flex items-start gap-2.5 text-sm">
+          <UserCircle className="mt-0.5 size-4 shrink-0 text-lagoon-dark" />
+          <div className="min-w-0">
+            <p className="leading-snug">
+              <span className="text-ink/50">Owner: </span>
+              <span className="font-medium text-ink">{resort.owner_name}</span>
+            </p>
+            {resort.owner_email && (
               <a
                 href={`mailto:${resort.owner_email}`}
-                className="text-lagoon-dark hover:underline"
+                className="block break-all leading-snug text-lagoon-dark hover:underline"
               >
                 {resort.owner_email}
               </a>
-            </>
-          )}
-        </p>
+            )}
+          </div>
+        </div>
       )}
       <p className="mt-3 text-base leading-relaxed text-ink/75">
         {resort.description}
@@ -111,7 +119,7 @@ const ResortDetails = () => {
                 <img
                   src={img.image_url}
                   alt={resort.name}
-                  className="block h-[420px] w-full rounded-2xl object-cover"
+                  className="block h-60 sm:h-[420px] w-full rounded-2xl object-cover"
                 />
               </CarouselItem>
             ))}
