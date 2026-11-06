@@ -9,6 +9,7 @@ import { BARANGAYS } from "@/lib/barangays";
 import { API_URL } from "../../../config";
 import LoadingButton from "@/components/LoadingButton";
 import useSingleFlight from "@/hooks/useSingleFlight";
+import StayTypeNameField from "@/components/StayTypeNameField";
 
 const AddResort = () => {
   const [name, setName] = useState("");
@@ -459,13 +460,10 @@ const AddResort = () => {
           </p>
 
           <div className="mt-2 rounded-xl border border-ink/10 bg-sand-light p-3">
-            <Input
-              type="text"
-              placeholder="Name (e.g. Overnight, Day Tour, 21-Hour Stay)"
-              value={stayTypeForm.name}
-              onChange={(e) =>
-                setStayTypeForm({ ...stayTypeForm, name: e.target.value })
-              }
+            <StayTypeNameField
+              key={stayTypes.length}
+              form={stayTypeForm}
+              setForm={setStayTypeForm}
             />
             <div className="mt-2 grid grid-cols-2 gap-2">
               <div>
