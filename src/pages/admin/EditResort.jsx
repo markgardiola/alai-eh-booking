@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { BARANGAYS } from "@/lib/barangays";
 import { API_URL } from "../../../config";
+import StayTypeNameField from "@/components/StayTypeNameField";
 
 const EditResort = () => {
   const { id } = useParams();
@@ -379,6 +380,10 @@ const EditResort = () => {
 
       <form
         id="edit-resort-form"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && e.target.tagName === "INPUT")
+            e.preventDefault();
+        }}
         onSubmit={handleSubmit}
         encType="multipart/form-data"
         className="mt-6 flex flex-col gap-5"
@@ -784,16 +789,20 @@ const EditResort = () => {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
+          <div
+            className="flex flex-col gap-4"
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+              e.preventDefault();
+              handleSaveStayType();
+            }}
+          >
             <div>
               <label className="text-sm font-medium text-ink/80">Name</label>
               <div className="mt-1.5">
-                <Input
-                  value={stayTypeForm.name}
-                  onChange={(e) =>
-                    setStayTypeForm({ ...stayTypeForm, name: e.target.value })
-                  }
-                  placeholder="e.g. Overnight, Day Tour, 21-Hour Stay"
+                <StayTypeNameField
+                  form={stayTypeForm}
+                  setForm={setStayTypeForm}
                 />
               </div>
             </div>

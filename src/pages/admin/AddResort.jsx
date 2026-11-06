@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { ArrowLeft, X, Plus } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BARANGAYS } from "@/lib/barangays";
@@ -91,6 +91,9 @@ const AddResort = () => {
       !stayTypeForm.checkOutTime ||
       !stayTypeForm.price
     ) {
+      toast.error(
+        "Choose a stay type and fill in the check-in time, check-out time, and price.",
+      );
       return;
     }
     setStayTypes([...stayTypes, stayTypeForm]);
@@ -105,6 +108,12 @@ const AddResort = () => {
 
   const handleRemoveStayType = (index) => {
     setStayTypes(stayTypes.filter((_, i) => i !== index));
+  };
+
+  const onEnter = (action) => (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    action();
   };
 
   const submitResort = async () => {
@@ -194,6 +203,12 @@ const AddResort = () => {
 
       <form
         onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          // Resort name, owner email, etc.: Enter shouldn't submit the form.
+          // Only the Add Resort button does. (Textareas are unaffected.)
+          if (e.key === "Enter" && e.target.tagName === "INPUT")
+            e.preventDefault();
+        }}
         encType="multipart/form-data"
         className="mt-6 flex flex-col gap-5"
       >
@@ -361,16 +376,17 @@ const AddResort = () => {
           <div className="mt-1.5 flex gap-2">
             <Input
               type="text"
-              placeholder="Amenity (e.g. Pool, WiFi)"
+              placeholder="Type an amenity and press Enter (e.g. Pool, WiFi)"
               value={amenityInput}
               onChange={(e) => setAmenityInput(e.target.value)}
+              onKeyDown={onEnter(handleAddAmenity)}
             />
             <Button
               type="button"
               variant="secondary"
               onClick={handleAddAmenity}
             >
-              <Plus className="size-4" />
+              Add
             </Button>
           </div>
           {amenities.length > 0 && (
@@ -407,6 +423,7 @@ const AddResort = () => {
                 placeholder="Room Name (e.g. Master Bedroom)"
                 value={roomName}
                 onChange={(e) => setRoomName(e.target.value)}
+                onKeyDown={onEnter(handleAddRoom)}
               />
             </div>
             <input
@@ -423,7 +440,7 @@ const AddResort = () => {
               onClick={handleAddRoom}
               className="shrink-0"
             >
-              <Plus className="size-4" />
+              Add
             </Button>
           </div>
           {rooms.length > 0 && (
@@ -459,7 +476,16 @@ const AddResort = () => {
             offers, each with its own times and price. At least one is required.
           </p>
 
-          <div className="mt-2 rounded-xl border border-ink/10 bg-sand-light p-3">
+          <div
+            className="mt-2 rounded-xl border border-ink/10 bg-sand-light p-3"
+            onKeyDown={(e) => {
+              // Enter in any text/time/number box adds the stay type. The
+              // dropdown and checkbox keep their normal Enter behavior.
+              if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+              e.preventDefault();
+              if (e.target.type !== "checkbox") handleAddStayType();
+            }}
+          >
             <StayTypeNameField
               key={stayTypes.length}
               form={stayTypeForm}
@@ -527,8 +553,9 @@ const AddResort = () => {
                 type="button"
                 variant="secondary"
                 onClick={handleAddStayType}
+                className="shrink-0"
               >
-                <Plus className="size-4" />
+                Add
               </Button>
             </div>
           </div>
