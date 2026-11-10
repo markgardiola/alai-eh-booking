@@ -7,11 +7,16 @@ import { Button } from "@/components/ui/button";
 import LoadingButton from "@/components/LoadingButton";
 import StatusBadge from "@/components/StatusBadge";
 import Pagination from "@/components/Pagination";
+import SearchInput from "@/components/SearchInput";
+import { allWordsIn } from "@/lib/search";
+import { cn } from "@/lib/utils";
 import { API_URL } from "../../../config";
 
 const ManageBooking = () => {
   const [bookings, setBookings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [updatingKey, setUpdatingKey] = useState(null); // "<bookingId>:<status>"
   const busy = useRef(false);
   const bookingsPerPage = 5;
@@ -77,13 +82,38 @@ const ManageBooking = () => {
       });
   };
 
-  const indexOfLastBooking = currentPage * bookingsPerPage;
-  const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
-  const currentBookings = bookings.slice(
+  // Search: a number is a booking ID, anything else is a booker name.
+  const matchesSearch = (b) => {
+    const raw = query.trim().replace(/^#/, "");
+    if (!raw) return true;
+    if (/^\d+$/.test(raw)) return String(b.booking_id).includes(raw);
+    return allWordsIn(raw, b.username, b.full_name);
+  };
+  const searched = bookings.filter(matchesSearch);
+
+  // Tab counts reflect the current search, so they show what each tab
+  // would contain.
+  const counts = {
+    All: searched.length,
+    Pending: searched.filter((b) => b.status === "Pending").length,
+    Confirmed: searched.filter((b) => b.status === "Confirmed").length,
+    Cancelled: searched.filter((b) => b.status === "Cancelled").length,
+  };
+
+  const filteredBookings =
+    statusFilter === "All"
+      ? searched
+      : searched.filter((b) => b.status === statusFilter);
+
+  const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
+  const safePage = Math.min(currentPage, Math.max(totalPages, 1));
+  const indexOfFirstBooking = (safePage - 1) * bookingsPerPage;
+  const currentBookings = filteredBookings.slice(
     indexOfFirstBooking,
-    indexOfLastBooking,
+    indexOfFirstBooking + bookingsPerPage,
   );
-  const totalPages = Math.ceil(bookings.length / bookingsPerPage);
+
+  const STATUS_TABS = ["All", "Pending", "Confirmed", "Cancelled"];
 
   return (
     <div>
@@ -91,7 +121,51 @@ const ManageBooking = () => {
         Manage Bookings
       </h1>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SearchInput
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setCurrentPage(1);
+          }}
+          placeholder="Search booking ID or booker name"
+        />
+        <div
+          role="group"
+          aria-label="Filter by status"
+          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+        >
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              aria-pressed={statusFilter === tab}
+              onClick={() => {
+                setStatusFilter(tab);
+                setCurrentPage(1);
+              }}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
+                statusFilter === tab
+                  ? "border-lagoon bg-lagoon text-sand-light"
+                  : "border-ink/10 bg-white text-ink/70 hover:border-ink/20",
+              )}
+            >
+              {tab}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 text-xs",
+                  statusFilter === tab ? "bg-white/25" : "bg-sand text-ink/60",
+                )}
+              >
+                {counts[tab]}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
             <tr className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink/50">
@@ -107,7 +181,9 @@ const ManageBooking = () => {
             {currentBookings.length === 0 ? (
               <tr>
                 <td colSpan="6" className="px-4 py-6 text-center text-ink/50">
-                  No bookings found.
+                  {query || statusFilter !== "All"
+                    ? "No bookings match your search or filter."
+                    : "No bookings found."}
                 </td>
               </tr>
             ) : (
@@ -117,7 +193,15 @@ const ManageBooking = () => {
                   className="border-b border-ink/5 last:border-0"
                 >
                   <td className="px-4 py-3">{booking.booking_id}</td>
-                  <td className="px-4 py-3">{booking.username}</td>
+                  <td className="px-4 py-3">
+                    {booking.username}
+                    {booking.full_name &&
+                      booking.full_name !== booking.username && (
+                        <span className="block text-xs text-ink/50">
+                          {booking.full_name}
+                        </span>
+                      )}
+                  </td>
                   <td className="px-4 py-3">{booking.resort_name}</td>
                   <td className="px-4 py-3 text-ink/70">
                     {booking.check_in_display} to {booking.check_out_display}
@@ -230,7 +314,7 @@ const ManageBooking = () => {
       </div>
 
       <Pagination
-        currentPage={currentPage}
+        currentPage={safePage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />

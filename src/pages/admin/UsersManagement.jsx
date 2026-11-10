@@ -8,6 +8,8 @@ import LoadingButton from "@/components/LoadingButton";
 import useSingleFlight from "@/hooks/useSingleFlight";
 import IconInput from "@/components/IconInput";
 import Pagination from "@/components/Pagination";
+import SearchInput from "@/components/SearchInput";
+import { allWordsIn, phoneContains } from "@/lib/search";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ const UsersManagement = () => {
   const [error, setError] = useState("");
   const [editingUser, setEditingUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [query, setQuery] = useState("");
   const [runSave, saving] = useSingleFlight();
   const [runDelete, deleting] = useSingleFlight();
   const [deletingId, setDeletingId] = useState(null);
@@ -62,7 +65,7 @@ const UsersManagement = () => {
         fetchUsers();
       } catch (err) {
         console.error(err);
-        toast.error("Failed to update user.");
+        toast.error(err.response?.data?.error || "Failed to update user.");
       }
     });
 
@@ -83,10 +86,17 @@ const UsersManagement = () => {
       }
     });
 
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(users.length / usersPerPage);
+  const filteredUsers = users.filter(
+    (u) =>
+      allWordsIn(query, u.username, u.email) || phoneContains(u.phone, query),
+  );
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const safePage = Math.min(currentPage, Math.max(totalPages, 1));
+  const indexOfFirstUser = (safePage - 1) * usersPerPage;
+  const currentUsers = filteredUsers.slice(
+    indexOfFirstUser,
+    indexOfFirstUser + usersPerPage,
+  );
 
   return (
     <div>
@@ -94,13 +104,24 @@ const UsersManagement = () => {
         User Management
       </h1>
 
+      <div className="mt-4">
+        <SearchInput
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setCurrentPage(1);
+          }}
+          placeholder="Search username, email, or mobile no."
+        />
+      </div>
+
       {loading ? (
         <p className="mt-6 text-ink/60">Loading users...</p>
       ) : error ? (
         <p className="mt-6 text-seal">{error}</p>
       ) : (
         <>
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-ink/10 text-xs uppercase tracking-wide text-ink/50">
@@ -119,7 +140,9 @@ const UsersManagement = () => {
                       colSpan="6"
                       className="px-4 py-6 text-center text-ink/50"
                     >
-                      No users found.
+                      {query
+                        ? "No users match your search."
+                        : "No users found."}
                     </td>
                   </tr>
                 ) : (
@@ -181,7 +204,7 @@ const UsersManagement = () => {
           </div>
 
           <Pagination
-            currentPage={currentPage}
+            currentPage={safePage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />

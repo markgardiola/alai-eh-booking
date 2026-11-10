@@ -6,14 +6,16 @@ import Swal from "sweetalert2";
 import { Plus, Trash2, MapPin, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import LoadingButton from "@/components/LoadingButton";
 import useSingleFlight from "@/hooks/useSingleFlight";
 import Pagination from "@/components/Pagination";
+import SearchInput from "@/components/SearchInput";
+import { allWordsIn } from "@/lib/search";
 import { API_URL } from "../../../config";
 
 const BeachResortListings = () => {
   const [resorts, setResorts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [query, setQuery] = useState("");
   const [runDelete, deleting] = useSingleFlight();
   const [deletingId, setDeletingId] = useState(null);
   const resortsPerPage = 6;
@@ -49,10 +51,14 @@ const BeachResortListings = () => {
       }
     });
 
-  const indexOfLastResort = currentPage * resortsPerPage;
-  const indexOfFirstResort = indexOfLastResort - resortsPerPage;
-  const currentResorts = resorts.slice(indexOfFirstResort, indexOfLastResort);
-  const totalPages = Math.ceil(resorts.length / resortsPerPage);
+  const filteredResorts = resorts.filter((r) => allWordsIn(query, r.name));
+  const totalPages = Math.ceil(filteredResorts.length / resortsPerPage);
+  const safePage = Math.min(currentPage, Math.max(totalPages, 1));
+  const indexOfFirstResort = (safePage - 1) * resortsPerPage;
+  const currentResorts = filteredResorts.slice(
+    indexOfFirstResort,
+    indexOfFirstResort + resortsPerPage,
+  );
 
   return (
     <div>
@@ -68,8 +74,21 @@ const BeachResortListings = () => {
         </Link>
       </div>
 
+      <div className="mt-4">
+        <SearchInput
+          value={query}
+          onChange={(v) => {
+            setQuery(v);
+            setCurrentPage(1);
+          }}
+          placeholder="Search by resort name"
+        />
+      </div>
+
       {currentResorts.length === 0 ? (
-        <p className="mt-10 text-center text-ink/60">No resorts found.</p>
+        <p className="mt-10 text-center text-ink/60">
+          {query ? `No resorts match "${query}".` : "No resorts found."}
+        </p>
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {currentResorts.map((resort) => (
@@ -137,7 +156,7 @@ const BeachResortListings = () => {
       )}
 
       <Pagination
-        currentPage={currentPage}
+        currentPage={safePage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />

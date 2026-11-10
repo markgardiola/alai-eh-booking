@@ -18,6 +18,7 @@ import DestinationDetailPage from "./pages/destinations/DestinationDetailPage";
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersManagement from "./pages/admin/UsersManagement";
+import OwnersManagement from "./pages/admin/OwnersManagement";
 import BeachResortListings from "./pages/admin/BeachResortListings";
 import ManageBooking from "./pages/admin/ManageBooking";
 import Dashboard from "./pages/admin/Dashboard";
@@ -89,6 +90,7 @@ const App = () => {
           >
             <Route index element={<Dashboard />} />
             <Route path="users" element={<UsersManagement />} />
+            <Route path="owners" element={<OwnersManagement />} />
             <Route path="resorts" element={<BeachResortListings />} />
             <Route path="resorts/add" element={<AddResort />} />
             <Route path="resorts/:id" element={<ResortDetails />} />

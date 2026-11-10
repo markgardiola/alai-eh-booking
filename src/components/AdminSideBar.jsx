@@ -4,6 +4,7 @@ import axios from "axios";
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Hotel,
   ClipboardList,
   MessageSquareText,
@@ -22,6 +23,7 @@ const navItems = [
     icon: LayoutDashboard,
   },
   { to: "/adminDashboard/users", label: "User Management", icon: Users },
+  { to: "/adminDashboard/owners", label: "Resort Owners", icon: UserCog },
   { to: "/adminDashboard/resorts", label: "Resort Listings", icon: Hotel },
   {
     to: "/adminDashboard/bookings",
